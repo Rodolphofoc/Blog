@@ -1,0 +1,58 @@
+parameters:
+    vmImage: 'DEFAULT_IMAGE'
+    publishProjects: ''
+
+jobs:
+  - job: BuildJob
+    displayName: 'Build & Test & Generate Artifacts'
+    pool:
+      vmImage: ${{ parameters.vmImage }}
+    steps:
+
+    - task: UseDotNet@2
+      displayName: 'Download .NET 8 Core sdk'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+        includePreviewVersions: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: Restore
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: 'select'
+
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration)'
+  
+    - task: DotNetCoreCLI@2
+      displayName: 'Create Manifest'
+      inputs:
+        command: custom
+        custom: 'new '
+        arguments: 'tool-manifest'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Install EF Core'
+      inputs:
+        command: custom
+        custom: 'tool '
+        arguments: 'install dotnet-ef --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources'
+      
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Generate Artifacts'
+      inputs:
+        command: 'publish'
+        projects: '**/*TaskManager.csproj'
+        publishWebProjects: false
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/'
+        zipAfterPublish: true
+
+    - publish: '$(Build.ArtifactStagingDirectory)'
+      artifact: drop

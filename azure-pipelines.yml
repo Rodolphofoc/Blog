@@ -1,0 +1,13 @@
+trigger:
+    - develop
+
+
+stages:
+- stage: Build
+  displayName: 'Build App'
+  jobs:
+  - template: azure-pipelines-build-template.yml
+    parameters:
+      vmImage: 'ubuntu-latest'
+      buildConfiguration: 'Release'
+      publishProjects: '**/*TaskManager.csproj'

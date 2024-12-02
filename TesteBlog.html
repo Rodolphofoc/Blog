@@ -8,20 +8,20 @@
 </head>
 <body>
     <h1>Post Notifications</h1>
+    <button id="refresh">Refresh Messages</button>
     <div id="messages" style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
         <p><em>No messages yet...</em></p>
     </div>
     <script>
         // Create a connection to the SignalR Hub
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("wss://localhost:7104/postHub", { // Alteração para wss://
-                transport: signalR.HttpTransportType.WebSockets
-            })
+            .withUrl("http://localhost:7104/postHub", { transport: signalR.HttpTransportType.WebSockets })
             .build();
 
+        const messagesDiv = document.getElementById("messages");
+
         // Event listener for incoming messages
-        connection.on("PostAdded", (message) => {
-            const messagesDiv = document.getElementById("messages");
+        connection.on("ReceivePostAdded", (message) => {
             const newMessage = document.createElement("p");
             newMessage.textContent = `New post notification: ${message}`;
             messagesDiv.appendChild(newMessage);
@@ -31,6 +31,16 @@
         connection.start()
             .then(() => console.log("Connected to SignalR Hub"))
             .catch(err => console.error("Error connecting to SignalR Hub: ", err));
+
+        // Refresh messages on button click
+        document.getElementById("refresh").addEventListener("click", () => {
+            while (messagesDiv.firstChild) {
+                messagesDiv.removeChild(messagesDiv.firstChild);
+            }
+            const noMessages = document.createElement("p");
+            noMessages.textContent = "No messages yet...";
+            messagesDiv.appendChild(noMessages);
+        });
     </script>
 </body>
 </html>

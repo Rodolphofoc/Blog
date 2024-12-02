@@ -23,5 +23,13 @@ namespace Api.Controllers
         {
             return Ok(await _mediator.Send(request));
         }
+
+        [HttpPost("register")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> Register([FromBody] RegisterCommand request)
+        {
+            return Ok(await _mediator.Send(request));
+        }
     }
 }

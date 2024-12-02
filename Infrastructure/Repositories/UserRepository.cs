@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class UserRepository : Repository<PostEntity>, IUserRepository
+    public class UserRepository : Repository<UserEntity>, IUserRepository
     {
         private readonly BlogContext _context;
 
@@ -18,6 +18,11 @@ namespace Infrastructure.Repositories
         public async Task<UserEntity?> GetByLoginAndPassword(string username, string password)
         {
             return await _context.User.FirstOrDefaultAsync(x => x.Name.Equals(username) && x.Password.Equals(password));
+        }
+
+        public async Task<UserEntity?> GetByName(string username)
+        {
+            return await _context.User.FirstOrDefaultAsync(x => x.Name.Equals(username));
         }
     }
 }

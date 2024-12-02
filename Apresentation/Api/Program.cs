@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using Applications.Interceptions;
 using Applications.Socket;
@@ -9,14 +10,18 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-ConfigureAuthentication(builder.Services, builder.Configuration);
+// Configura o Kestrel para ouvir na porta 7104
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Listen(IPAddress.Any, 7104);
+});
 
+ConfigureAuthentication(builder.Services, builder.Configuration);
 ConfigureServices(builder.Services, builder.Configuration);
 
 var app = builder.Build();
 
 ConfigureMiddleware(app);
-
 ConfigureEndpoints(app);
 
 app.Run();
@@ -54,16 +59,15 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditLogBehavior<,>));
     services.AddHttpContextAccessor();
 
-    // Configuração adicional
+    // Configuração de CORS
     services.AddCors(options =>
     {
-        options.AddDefaultPolicy(policy =>
-        {
-            policy.WithOrigins("http://localhost:3000")
-                     .AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
+        options.AddPolicy("AllowLocalhost",
+            builder => builder
+                .WithOrigins("http://127.0.0.1:5500") // Permitir apenas a origem específica
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials());
     });
 }
 
@@ -78,12 +82,9 @@ void ConfigureMiddleware(WebApplication app)
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.UseCors(builder =>
-    {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
+
+    // Use a política de CORS configurada
+    app.UseCors("AllowLocalhost");
 }
 
 void ConfigureEndpoints(WebApplication app)
@@ -92,5 +93,4 @@ void ConfigureEndpoints(WebApplication app)
 
     app.MapControllers();
     app.MapHub<PostHub>("/postHub"); // Para WebSocket
-
 }
